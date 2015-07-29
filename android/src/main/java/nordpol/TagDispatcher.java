@@ -27,6 +27,7 @@ public class TagDispatcher {
     }
 
     /** Enable exclusive NFC access for the given activity.
+     * Using this method makes NFC intent filters in the AndroidManifest.xml redundant.
      * @returns true if NFC was available and false if no NFC is available
      *          on device.
      */
@@ -66,6 +67,14 @@ public class TagDispatcher {
         return false;
     }
 
+        /** Call the TagDispatcher's listener.
+         * This applies only to older Android versions (pre-KITKAT) and must 
+         * be called from onNewIntent(...) in the TagDispatcher's activity.
+         * 
+         * @see {@link http://developer.android.com/reference/android/app/Activity.html#onNewIntent%28android.content.Intent%29}
+         * @param intent
+         * @return true if a tag was discovered.
+         */
     public boolean interceptIntent(Intent intent) {
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         if(tag != null) {
