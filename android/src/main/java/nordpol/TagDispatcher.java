@@ -12,6 +12,8 @@ import android.os.Build;
 import android.os.Bundle;
 
 public class TagDispatcher {
+    private static final int DELAY_PRESENCE = 5000;
+    
     private OnDiscoveredTagListener listener;
     private Activity activity;
 
@@ -84,14 +86,14 @@ public class TagDispatcher {
             return false;
         }
     }
-
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private void enableReaderMode(NfcAdapter adapter) {
         Bundle options = new Bundle();
         /* This is a work around for some Broadcom chipsets that does
          * the presence check by sending commands that interrupt the
          * processing of the ongoing command.
          */
-        options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 5000);
+        options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, DELAY_PRESENCE);
         NfcAdapter.ReaderCallback callback = new NfcAdapter.ReaderCallback() {
                 public void onTagDiscovered(Tag tag) {
                     listener.tagDiscovered(tag);
@@ -105,6 +107,7 @@ public class TagDispatcher {
                                  options);
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private void disableReaderMode(NfcAdapter adapter) {
         adapter.disableReaderMode(activity);
     }
