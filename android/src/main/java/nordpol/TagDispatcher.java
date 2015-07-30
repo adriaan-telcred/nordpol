@@ -37,10 +37,11 @@ public class TagDispatcher {
     public boolean enableExclusiveNfc() {
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(activity);
         if (adapter != null) {
-        	if (!adapter.isEnabled()) {
-                activity.startActivity(new Intent(android.provider.Settings.ACTION_NFC_SETTINGS));
-                return false;        		
-        	}            
+            if (!adapter.isEnabled()) {
+                activity.startActivity(new Intent(
+                    android.provider.Settings.ACTION_NFC_SETTINGS));
+                return false;
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 enableReaderMode(adapter);
             } else {
