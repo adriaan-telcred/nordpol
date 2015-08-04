@@ -12,7 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 public class TagDispatcher {
-    private static final int DELAY_PRESENCE = 10000;
+    private static final int DELAY_PRESENCE = 5000;
     
     private OnDiscoveredTagListener listener;
     private Activity activity;
