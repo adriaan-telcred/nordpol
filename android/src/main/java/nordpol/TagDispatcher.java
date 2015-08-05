@@ -14,19 +14,29 @@ import android.os.Bundle;
 public class TagDispatcher {
     private static final int DELAY_PRESENCE = 5000;
     
-    private OnDiscoveredTagListener listener;
+    private OnDiscoveredTagListener tagDiscoveredListener;
+    private OnNfcDisabledListener nfcDisabledListener;
     private Activity activity;
 
     private TagDispatcher(Activity activity,
-                          OnDiscoveredTagListener listener) {
+                          OnDiscoveredTagListener tagDiscoveredListener,
+                          OnNfcDisabledListener nfcDisabledListener) {
         this.activity = activity;
-        this.listener = listener;
+        this.tagDiscoveredListener = tagDiscoveredListener;
+        this.nfcDisabledListener = nfcDisabledListener;
     }
 
     public static TagDispatcher get(Activity activity,
-                                    OnDiscoveredTagListener listener) {
-        return new TagDispatcher(activity, listener);
+                                    OnDiscoveredTagListener tagDiscoveredListener
+                                    OnNfcDisabledListener nfcDisabledListener) {
+        return new TagDispatcher(activity, tagDiscoveredListener, nfcDisabledListener);
     }
+
+    public static TagDispatcher get(Activity activity,
+                                    OnDiscoveredTagListener tagDiscoveredListener) {
+        return new TagDispatcher(activity, tagDiscoveredListener, null);
+    }
+
 
     /** Enable exclusive NFC access for the given activity.
      * Using this method makes NFC intent filters in the AndroidManifest.xml redundant.
@@ -38,8 +48,12 @@ public class TagDispatcher {
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(activity);
         if (adapter != null) {
             if (!adapter.isEnabled()) {
-                activity.startActivity(new Intent(
+                if (null == nfcDisabledListener) {
+                    activity.startActivity(new Intent(
                     android.provider.Settings.ACTION_NFC_SETTINGS));
+                } else {
+                    nfcDisabledListener.nfcDisabled();
+                }
                 return false;
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
