@@ -12,21 +12,34 @@ import android.os.Build;
 import android.os.Bundle;
 
 public class TagDispatcher {
-    private OnDiscoveredTagListener listener;
+    private static final int DELAY_PRESENCE = 5000;
+    
+    private OnDiscoveredTagListener tagDiscoveredListener;
+    private OnNfcDisabledListener nfcDisabledListener;
     private Activity activity;
 
     private TagDispatcher(Activity activity,
-                          OnDiscoveredTagListener listener) {
+                          OnDiscoveredTagListener tagDiscoveredListener,
+                          OnNfcDisabledListener nfcDisabledListener) {
         this.activity = activity;
-        this.listener = listener;
+        this.tagDiscoveredListener = tagDiscoveredListener;
+        this.nfcDisabledListener = nfcDisabledListener;
     }
 
     public static TagDispatcher get(Activity activity,
-                                    OnDiscoveredTagListener listener) {
-        return new TagDispatcher(activity, listener);
+                                    OnDiscoveredTagListener tagDiscoveredListener
+                                    OnNfcDisabledListener nfcDisabledListener) {
+        return new TagDispatcher(activity, tagDiscoveredListener, nfcDisabledListener);
     }
 
+    public static TagDispatcher get(Activity activity,
+                                    OnDiscoveredTagListener tagDiscoveredListener) {
+        return new TagDispatcher(activity, tagDiscoveredListener, null);
+    }
+
+
     /** Enable exclusive NFC access for the given activity.
+     * Using this method makes NFC intent filters in the AndroidManifest.xml redundant.
      * @returns true if NFC was available and false if no NFC is available
      *          on device.
      */
@@ -34,6 +47,15 @@ public class TagDispatcher {
     public boolean enableExclusiveNfc() {
         NfcAdapter adapter = NfcAdapter.getDefaultAdapter(activity);
         if (adapter != null) {
+            if (!adapter.isEnabled()) {
+                if (null == nfcDisabledListener) {
+                    activity.startActivity(new Intent(
+                    android.provider.Settings.ACTION_NFC_SETTINGS));
+                } else {
+                    nfcDisabledListener.nfcDisabled();
+                }
+                return false;
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 enableReaderMode(adapter);
             } else {
@@ -62,6 +84,14 @@ public class TagDispatcher {
         return false;
     }
 
+        /** Call the TagDispatcher's listener.
+         * This applies only to older Android versions (pre-KITKAT) and must 
+         * be called from onNewIntent(...) in the TagDispatcher's activity.
+         * 
+         * @see {@link http://developer.android.com/reference/android/app/Activity.html#onNewIntent%28android.content.Intent%29}
+         * @param intent
+         * @return true if a tag was discovered.
+         */
     public boolean interceptIntent(Intent intent) {
         Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         if(tag != null) {
@@ -71,14 +101,14 @@ public class TagDispatcher {
             return false;
         }
     }
-
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private void enableReaderMode(NfcAdapter adapter) {
         Bundle options = new Bundle();
         /* This is a work around for some Broadcom chipsets that does
          * the presence check by sending commands that interrupt the
          * processing of the ongoing command.
          */
-        options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 5000);
+        options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, DELAY_PRESENCE);
         NfcAdapter.ReaderCallback callback = new NfcAdapter.ReaderCallback() {
                 public void onTagDiscovered(Tag tag) {
                     listener.tagDiscovered(tag);
@@ -92,6 +122,7 @@ public class TagDispatcher {
                                  options);
     }
 
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private void disableReaderMode(NfcAdapter adapter) {
         adapter.disableReaderMode(activity);
     }
